@@ -24,9 +24,6 @@ const int mqtt_port = 1883;
 const char *mqtt_photo_topic = "esp32/medicinebox/photo";  // 照片 URL 主题（LangChain 订阅）
 const char *mqtt_status_topic = "esp32/medicinebox/status";  // 药盒状态主题
 
-// 触发拍照的引脚（GPIO0 是 ESP32-CAM 上的按键）
-const int trigger_pin = 0;
-
 // 门磁开关配置（MC-38 门磁开关）
 const int door_sensor_pin = 13;  // MC-38 门磁开关连接到 GPIO13
 bool door_last_state = HIGH;     // 门的上一个状态（默认为高电平，表示门打开）
@@ -103,7 +100,6 @@ void initCamera() {
 // ========== 设置 ==========
 void setup() {
   Serial.begin(115200);
-  pinMode(trigger_pin, INPUT_PULLUP);
   pinMode(door_sensor_pin, INPUT_PULLUP);  // 门磁开关引脚配置为上拉输入
 
   initCamera();
@@ -112,24 +108,12 @@ void setup() {
   mqttClient.setServer(mqtt_server, mqtt_port);
   connectMQTT();
 
-  Serial.println("Ready! Press button (GPIO0) to take photo or open door to trigger");
+  Serial.println("Ready! Close medicine box lid to trigger photo");
 }
 
 // ========== 主循环 ==========
 void loop() {
   mqttClient.loop();
-
-  // 按键触发拍照（原有功能）
-  if (digitalRead(trigger_pin) == LOW) {
-    delay(50);
-    if (digitalRead(trigger_pin) == LOW) {
-      Serial.println("Button pressed, taking photo...");
-      takePhotoAndUpload();
-      while (digitalRead(trigger_pin) == LOW) {
-        delay(10);
-      }
-    }
-  }
 
   // 门磁开关状态检测（药盒盖子盖上触发）
   bool door_current_state = digitalRead(door_sensor_pin);
