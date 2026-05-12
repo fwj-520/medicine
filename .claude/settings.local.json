@@ -31,7 +31,12 @@
       "Bash(git rebase *)",
       "Bash(taskkill /F /IM python.exe)",
       "Bash(timeout 3)",
-      "Bash(timeout 3 curl -s -o NUL -w \"%{http_code}\" http://localhost:8000/)"
+      "Bash(timeout 3 curl -s -o NUL -w \"%{http_code}\" http://localhost:8000/)",
+      "Bash(tasklist)",
+      "Bash(findstr python *)",
+      "Bash(curl -s -o NUL -w \"%{http_code}\" http://localhost:8000/)",
+      "Bash(timeout 3 curl -X POST -H \"Content-Type: image/jpeg\" --data-binary @DoorSensorTest.txt http://localhost:8000/upload)",
+      "Bash(timeout 10 curl -X POST -H \"Content-Type: image/jpeg\" --data-binary @DoorSensorTest.txt http://localhost:8000/upload)"
     ]
   }
 }
