@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(arduino-cli board *)",
+      "Bash(python *)",
+      "Bash(pip install *)",
+      "Bash(pip --version)",
+      "Bash(findstr pillow *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8000)",
+      "Bash(arduino-cli compile *)",
+      "Bash(dir C:\\\\Program Files \\(x86\\)\\\\Arduino *)",
+      "Bash(where arduino *)",
+      "Bash(timeout 5 powershell -Command \"Start-Sleep -Seconds 2; Test-NetConnection -ComputerName localhost -Port 8000 | Select-Object -ExpandProperty TcpTestSucceeded\")",
+      "Bash(timeout 3 curl -s http://localhost:8000/)",
+      "Bash(taskkill /F /PID 24344)",
+      "Bash(timeout 2)",
+      "Bash(timeout 3 powershell -Command \"Start-Sleep -Seconds 2; netstat -ano | Select-String :8000\")",
+      "Bash(taskkill /PID 24344 /F)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 2; netstat -ano | Select-String :8000\")",
+      "Bash(powershell -Command ' *)",
+      "Bash(del DoorSensorTest.ino)",
+      "Bash(git reset *)",
+      "Bash(git rebase *)"
+    ]
+  }
+}

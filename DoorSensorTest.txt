@@ -1,0 +1,173 @@
+// 简化的门磁开关测试脚本
+// 用于快速验证门磁开关是否能正确触发拍照
+// 拍照功能会显示详细的调试信息
+
+#include <Arduino.h>
+#include "esp_camera.h"
+#include <WiFi.h>
+#include "camera_pins.h"
+
+// 门磁开关配置
+const int door_sensor_pin = 13;
+bool door_last_state = HIGH;
+unsigned long door_debounce_delay = 500;
+unsigned long last_door_change_time = 0;
+
+// WiFi 配置（使用与主程序相同的配置）
+const char *ssid = "2101-2";
+const char *password = "dsj-2101";
+
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  WiFi.setSleep(false);
+
+  Serial.print("Connecting to ");
+  Serial.print(ssid);
+  int retryCount = 0;
+  int maxRetries = 30;
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+    retryCount++;
+
+    if (retryCount > maxRetries) {
+      Serial.println("\nWiFi connection failed!");
+      Serial.println("Rebooting in 5 seconds...");
+      delay(5000);
+      ESP.restart();
+    }
+  }
+
+  Serial.println("\nWiFi connected!");
+  Serial.println("IP Address: " + WiFi.localIP().toString());
+}
+
+void initCamera() {
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sccb_sda = SIOD_GPIO_NUM;
+  config.pin_sccb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  config.xclk_freq_hz = 20000000;
+  config.frame_size = FRAMESIZE_UXGA;
+  config.pixel_format = PIXFORMAT_JPEG;
+  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  config.fb_location = CAMERA_FB_IN_PSRAM;
+  config.jpeg_quality = 12;
+  config.fb_count = 1;
+
+  if (psramFound()) {
+    config.jpeg_quality = 10;
+    config.fb_count = 2;
+    config.grab_mode = CAMERA_GRAB_LATEST;
+  } else {
+    config.frame_size = FRAMESIZE_SVGA;
+    config.fb_location = CAMERA_FB_IN_DRAM;
+  }
+
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) {
+    Serial.printf("Camera init failed with error 0x%x", err);
+    return;
+  }
+
+  sensor_t *s = esp_camera_sensor_get();
+  if (s->id.PID == OV2640_PID) {
+    s->set_vflip(s, 1);
+    s->set_brightness(s, 1);
+    s->set_saturation(s, -2);
+  }
+  s->set_framesize(s, FRAMESIZE_QVGA);
+}
+
+void takePhotoTest() {
+  Serial.println("=== takePhotoTest() called ===");
+
+  Serial.println("Taking photo...");
+  camera_fb_t *fb = esp_camera_fb_get();
+
+  if (!fb) {
+    Serial.println("ERROR: Failed to take photo!");
+    Serial.println("=== takePhotoTest() ended ===");
+    return;
+  }
+
+  Serial.printf("Success! Photo size: %zu bytes\n", fb->len);
+
+  // 释放内存
+  esp_camera_fb_return(fb);
+  Serial.println("=== takePhotoTest() completed ===");
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  Serial.println("Door sensor trigger test");
+
+  pinMode(door_sensor_pin, INPUT_PULLUP);
+
+  // 检测初始状态
+  bool initial_state = digitalRead(door_sensor_pin);
+  door_last_state = initial_state;
+  Serial.print("Initial door sensor state: ");
+  Serial.println(initial_state ? "HIGH (open)" : "LOW (closed)");
+
+  Serial.println("Initializing camera...");
+  initCamera();
+  Serial.println("Camera initialized");
+
+  Serial.println("Connecting to WiFi...");
+  connectWiFi();
+
+  Serial.println("\nTest ready! Open/close the medicine box to trigger photo");
+}
+
+void loop() {
+  bool door_current_state = digitalRead(door_sensor_pin);
+
+  // 显示实时状态
+  static bool last_debug_state = HIGH;
+  if (door_current_state != last_debug_state) {
+    last_debug_state = door_current_state;
+    Serial.print("State change: ");
+    Serial.println(door_current_state ? "HIGH (open)" : "LOW (closed)");
+  }
+
+  // 消抖处理
+  if (door_current_state != door_last_state) {
+    last_door_change_time = millis();
+  }
+
+  if ((millis() - last_door_change_time) > door_debounce_delay) {
+    if (door_current_state != door_last_state) {
+      door_last_state = door_current_state;
+      Serial.println("--- Debounced state confirmed ---");
+
+      if (door_current_state == LOW) {
+        Serial.println("DOOR CLOSED! Triggering photo...");
+        takePhotoTest();
+      } else {
+        Serial.println("DOOR OPEN!");
+      }
+    }
+  }
+
+  delay(100);
+}
