@@ -253,18 +253,6 @@ def main():
         os.makedirs(UPLOAD_DIR)
         logger.debug("创建临时文件夹: {}".format(UPLOAD_DIR))
 
-    # 测试 COS 连接
-    logger.info("测试腾讯云 COS 连接...")
-    try:
-        client = create_cos_client()
-        buckets = client.list_buckets()
-        logger.info("COS 连接成功")
-        logger.debug("找到存储桶数量: {}".format(len(buckets['Buckets']['Bucket'])))
-    except Exception as e:
-        logger.error("COS 连接失败: {}".format(e))
-        logger.error("请检查配置信息后重试")
-        return False
-
     # 启动服务器
     logger.info("启动 HTTP 服务器...")
     try:
@@ -273,6 +261,7 @@ def main():
             logger.info("服务器地址: http://localhost:{}".format(PORT))
             logger.info("API 接口: http://localhost:{}/upload".format(PORT))
             logger.info("按 Ctrl+C 停止服务器")
+            logger.warning("注意：COS 连接测试已禁用，请确保配置了正确的密钥")
 
             httpd.serve_forever()
 

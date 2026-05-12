@@ -28,7 +28,10 @@
       "Bash(powershell -Command ' *)",
       "Bash(del DoorSensorTest.ino)",
       "Bash(git reset *)",
-      "Bash(git rebase *)"
+      "Bash(git rebase *)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(timeout 3)",
+      "Bash(timeout 3 curl -s -o NUL -w \"%{http_code}\" http://localhost:8000/)"
     ]
   }
 }
