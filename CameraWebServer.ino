@@ -103,8 +103,8 @@ void setup() {
   delay(1000); // 启动延迟
   Serial.println("ESP32-CAM Medicine Box Project");
 
-  // 门磁开关引脚配置（尝试不同的输入模式）
-  pinMode(door_sensor_pin, INPUT);  // 先尝试普通输入模式，不使用内部上拉
+  // 门磁开关引脚配置（使用内部上拉输入模式）
+  pinMode(door_sensor_pin, INPUT_PULLUP);  // 使用内部上拉电阻，提高检测稳定性
 
   // 检测门磁开关的初始状态
   bool initial_state = digitalRead(door_sensor_pin);
@@ -166,15 +166,16 @@ void loop() {
       Serial.print("New state: ");
       Serial.println(door_current_state ? "HIGH (open)" : "LOW (closed)");
 
-      if (door_current_state == LOW) {
-        Serial.println("Medicine box lid closed! Taking photo...");
-        Serial.flush(); // 确保所有调试信息都发送到串口
-        takePhotoAndUpload();  // 拍照并上传
-      } else {
+      // 门磁开关逻辑：门打开时引脚为 HIGH，门关闭时引脚为 LOW（使用内部上拉）
+      if (door_current_state == HIGH) {
         Serial.println("Medicine box lid open");
         // 发送状态到 MQTT
         String statusMessage = "{\"status\": \"door_open\", \"timestamp\": " + String(millis()) + "}";
         mqttClient.publish(mqtt_status_topic, statusMessage.c_str());
+      } else {
+        Serial.println("Medicine box lid closed! Taking photo...");
+        Serial.flush(); // 确保所有调试信息都发送到串口
+        takePhotoAndUpload();  // 拍照并上传
       }
     }
   }
